@@ -1841,6 +1841,7 @@ class MaskRCNN():
         self.model_dir = model_dir
         self.set_log_dir()
         self.keras_model = self.build(mode=mode, config=config)
+        self.keras_model.metrics_tensors = []
 
     def build(self, mode, config):
         """Build Mask R-CNN architecture.
@@ -2231,18 +2232,26 @@ class MaskRCNN():
         # First, clear previously set losses to avoid duplication
         self.keras_model._losses = []
         self.keras_model._per_input_losses = {}
-        loss_names = [
-            "rpn_class_loss",  "rpn_bbox_loss",
-            "mrcnn_class_loss", "mrcnn_bbox_loss", "mrcnn_mask_loss"]
+        # loss_names = [
+        #     "rpn_class_loss",  "rpn_bbox_loss",
+        #     "mrcnn_class_loss", "mrcnn_bbox_loss", "mrcnn_mask_loss"]
+        loss_names = ["rpn_class_loss",  "rpn_bbox_loss"]
         for name in loss_names:
             layer = self.keras_model.get_layer(name)
-            if layer.output in self.keras_model.losses:
+            # print('self.keras_model: %s' % self.keras_model)
+            # print('self.keras_model.losses: %s' % self.keras_model.losses)
+            # self.keras_model.losses = K.identity(self.keras_model.losses)
+            # print('self.keras_model.losses: %s' % self.keras_model.losses)
+            keras_model_losses_str = [str(keras_model_loss) for keras_model_loss in self.keras_model.losses]
+            layer_output_str = str(layer.output)
+            # print('self.keras_model.losses[0]: %s' % self.keras_model.losses[0])
+            if layer_output_str in keras_model_losses_str:
                 continue
             loss = (
                 tf.reduce_mean(layer.output, keepdims=True)
                 * self.config.LOSS_WEIGHTS.get(name, 1.))
             print('loss: %s' % loss)
-            print('self.keras_model: %s' % self.keras_model)
+            # print('self.keras_model: %s' % self.keras_model)
             self.keras_model.add_loss(loss)
 
         # Add L2 Regularization
@@ -2251,7 +2260,8 @@ class MaskRCNN():
             keras.regularizers.l2(self.config.WEIGHT_DECAY)(w) / tf.cast(tf.size(w), tf.float32)
             for w in self.keras_model.trainable_weights
             if 'gamma' not in w.name and 'beta' not in w.name]
-        self.keras_model.add_loss(tf.add_n(reg_losses))
+        print('tf.add_n(reg_losses): %s' % tf.add_n(reg_losses))
+        self.keras_model.add_loss(KL.Input(tensor=tf.add_n(reg_losses)))
 
         # Compile
         self.keras_model.compile(
@@ -2432,7 +2442,7 @@ class MaskRCNN():
         else:
             workers = multiprocessing.cpu_count()
 
-        self.keras_model.fit_generator(
+        self.keras_model.fit(
             train_generator,
             initial_epoch=self.epoch,
             epochs=epochs,
