@@ -231,6 +231,12 @@ class KerasTensor:
 
         # Use the generic conversion from typespec to a placeholder.
         def component_to_placeholder(component):
+            import inspect
+            caller_frame = inspect.currentframe().f_back
+            caller_name = caller_frame.f_code.co_name
+            caller_module = inspect.getmodule(caller_frame).__name__
+            # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+            # print('component: %s' % component)
             return tf.compat.v1.placeholder(component.dtype, component.shape)
 
         return tf.nest.map_structure(

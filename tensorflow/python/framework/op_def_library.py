@@ -752,7 +752,14 @@ def _CheckAllInputsUsed(op_type_name, keywords):
 
 def _apply_op_helper(op_type_name, name=None, **keywords):  # pylint: disable=invalid-name
   """Implementation of apply_op that returns output_structure, op."""
-
+  # print('op_type_name: %s' % op_type_name)
+  # print('name: %s' % name)
+  # print('**keywords: %s' % str(keywords))
+  import inspect
+  caller_frame = inspect.currentframe().f_back
+  caller_name = caller_frame.f_code.co_name
+  caller_module = inspect.getmodule(caller_frame).__name__
+  # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
   op_def, g, producer = _GetOpDef(op_type_name, keywords)
   name = name if name else op_type_name
 

@@ -3800,15 +3800,19 @@ class Graph(object):
     caller_frame = inspect.currentframe().f_back
     caller_name = caller_frame.f_code.co_name
     caller_module = inspect.getmodule(caller_frame).__name__
-    print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+    # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+    # print(f"inputs: {inputs}\n")
+    # outfile = open('debug.txt', 'a')
+    # outfile.write(f"node_def: {node_def}\n")
+    # outfile.write(f"self: {self}\n")
+    # outfile.write(f"inputs: {inputs}\n")
+    # outfile.write(f"dtypes: {dtypes}\n")
+    # outfile.write(f"control_inputs: {control_inputs}\n")
+    # outfile.write(f"self._default_original_op: {self._default_original_op}\n")
+    # outfile.write(f"op_def: {op_def}\n")
+    # outfile.close()
+
     with self._mutation_lock():
-      raise ValueError(f"node_def: {node_def}\n"
-                       f"self: {self}\n"
-                       f"inputs: {inputs}\n"
-                       f"dtypes: {dtypes}\n"
-                       f"control_inputs: {control_inputs}\n"
-                       f"self._default_original_op: {self._default_original_op}\n"
-                       f"op_def: {op_def}\n")
       ret = Operation(
           node_def,
           self,
