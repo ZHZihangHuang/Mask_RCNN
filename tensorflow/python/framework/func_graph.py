@@ -733,12 +733,15 @@ class FuncGraph(ops.Graph):
         inp = ctxt.AddValue(inp)
       inp = self.capture(inp)
       captured_inputs.append(inp)
-    # import inspect
-    # caller_frame = inspect.currentframe().f_back
-    # caller_name = caller_frame.f_code.co_name
-    # caller_module = inspect.getmodule(caller_frame).__name__
+    import inspect
+    caller_frame = inspect.currentframe().f_back
+    caller_name = caller_frame.f_code.co_name
+    caller_module = inspect.getmodule(caller_frame).__name__
     # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
-    print('FuncGraph.get_name_scope(): %s' % FuncGraph.get_name_scope(self))
+    # print('FuncGraph.get_name_scope(): %s' % FuncGraph.get_name_scope(self))
+    # if 'add_loss_2_scratch_graph' in str(self):
+    #   print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+    #   print(f"self: {self}\n")
     return super(FuncGraph, self)._create_op_internal(  # pylint: disable=protected-access
         op_type, captured_inputs, dtypes, input_types, name, attrs, op_def,
         compute_device)
@@ -781,9 +784,23 @@ class FuncGraph(ops.Graph):
         name = tensor.op.name
       inner_graph = tensor.graph
       while inner_graph is not None and isinstance(inner_graph, FuncGraph):
-        print('---------------------------debug func_graph1')
-        print('---------------------------inner_graph： %s' % inner_graph)
-        print('---------------------------self %s' % self)
+        # outfile = open('debug.txt', 'a')
+        # import sys
+        # print('---------------------------debug func_graph1')
+        # print('---------------------------self %s' % self)
+        # print('---------------------------inner_graph： %s' % inner_graph)
+        # sys.stdout.flush()
+        # outfile.close()
+        # raise ValueError(f"------------------------------func_graph1")
+        # raise errors.InaccessibleTensorError(
+        #       f"{tensor!r} is out of scope and cannot be used here. Use return "
+        #       "values, explicit Python locals or TensorFlow collections to "
+        #       "access it.\n"
+        #       "Please see https://www.tensorflow.org/guide/function#all_outputs_of_a_tffunction_must_be_return_values "
+        #       "for more information.\n\n"
+        #       f"{tensor!r} was defined here:\n{tensor_traceback}\n\n"
+        #       f"The tensor {tensor!r} cannot be accessed from {self}, because "
+        #       f"it was defined in {tensor.graph}, which is out of scope.")
         if inner_graph is self:
           try:
             tb = tensor.op.traceback
@@ -797,16 +814,16 @@ class FuncGraph(ops.Graph):
             tensor_traceback = "\n".join(tensor_traceback_list)
           # Keep in sync with tfe_wrapper.cc.
           # TODO(b/200991648): Unify those two paths.
-          # raise errors.InaccessibleTensorError('---------------------------debug func_graph1')
-          # raise errors.InaccessibleTensorError(
-          #     f"{tensor!r} is out of scope and cannot be used here. Use return "
-          #     "values, explicit Python locals or TensorFlow collections to "
-          #     "access it.\n"
-          #     "Please see https://www.tensorflow.org/guide/function#all_outputs_of_a_tffunction_must_be_return_values "
-          #     "for more information.\n\n"
-          #     f"{tensor!r} was defined here:\n{tensor_traceback}\n\n"
-          #     f"The tensor {tensor!r} cannot be accessed from {self}, because "
-          #     f"it was defined in {tensor.graph}, which is out of scope.")
+          raise errors.InaccessibleTensorError('---------------------------debug func_graph2')
+          raise errors.InaccessibleTensorError(
+              f"{tensor!r} is out of scope and cannot be used here. Use return "
+              "values, explicit Python locals or TensorFlow collections to "
+              "access it.\n"
+              "Please see https://www.tensorflow.org/guide/function#all_outputs_of_a_tffunction_must_be_return_values "
+              "for more information.\n\n"
+              f"{tensor!r} was defined here:\n{tensor_traceback}\n\n"
+              f"The tensor {tensor!r} cannot be accessed from {self}, because "
+              f"it was defined in {tensor.graph}, which is out of scope.")
         inner_graph = inner_graph.outer_graph
       return self._capture_helper(tensor, name)
     return tensor

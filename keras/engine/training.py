@@ -1479,9 +1479,9 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
         base_layer.keras_api_gauge.get_cell("fit").set(True)
         # Legacy graph support is contained in `training_v1.Model`.
         version_utils.disallow_legacy_graph("Model", "fit")
-        print('----------------------------------debug2')
+        # print('----------------------------------debug2')
         self._assert_compile_was_called()
-        print('----------------------------------debug3')
+        # print('----------------------------------debug3')
         self._check_call_args("fit")
         _disallow_inside_tf_function("fit")
 

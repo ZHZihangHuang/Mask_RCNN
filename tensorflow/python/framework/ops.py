@@ -2042,6 +2042,7 @@ class Operation(object):
         or if `inputs` and `input_types` are incompatible.
       ValueError: if the `node_def` name is not valid.
     """
+    # print('inputs: %s' % inputs)
     if not isinstance(g, Graph):
       raise TypeError(f"Argument g must be a Graph. "
                       f"Received an instance of type {type(g)}")
@@ -3801,7 +3802,8 @@ class Graph(object):
     caller_name = caller_frame.f_code.co_name
     caller_module = inspect.getmodule(caller_frame).__name__
     # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
-    # print(f"inputs: {inputs}\n")
+
+    # sys.stdout.flush()
     # outfile = open('debug.txt', 'a')
     # outfile.write(f"node_def: {node_def}\n")
     # outfile.write(f"self: {self}\n")
@@ -3813,15 +3815,28 @@ class Graph(object):
     # outfile.close()
 
     with self._mutation_lock():
-      ret = Operation(
-          node_def,
-          self,
-          inputs=inputs,
-          output_types=dtypes,
-          control_inputs=control_inputs,
-          input_types=input_types,
-          original_op=self._default_original_op,
-          op_def=op_def)
+      if 'add_loss_2_scratch_graph' in str(self):
+        print(f"inputs: {inputs}")
+        new_inputs = inputs.copy()
+        ret = Operation(
+            node_def,
+            self,
+            inputs=new_inputs,
+            output_types=dtypes,
+            control_inputs=control_inputs,
+            input_types=input_types,
+            original_op=self._default_original_op,
+            op_def=op_def)
+      else:
+        ret = Operation(
+            node_def,
+            self,
+            inputs=inputs,
+            output_types=dtypes,
+            control_inputs=control_inputs,
+            input_types=input_types,
+            original_op=self._default_original_op,
+            op_def=op_def)
       self._create_op_helper(ret, compute_device=compute_device)
     return ret
 

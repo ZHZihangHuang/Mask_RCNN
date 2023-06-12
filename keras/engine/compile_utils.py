@@ -276,7 +276,7 @@ class LossesContainer(Container):
                 # raise ValueError(f"-----------------------------debug compiled_loss __call__4.2")
                 continue
 
-            raise ValueError(f"-----------------------------debug compiled_loss __call__5")
+            # raise ValueError(f"-----------------------------debug compiled_loss __call__5")
             y_t, y_p, sw = match_dtype_and_rank(y_t, y_p, sw)
             sw = losses_utils.apply_mask(y_p, sw, losses_utils.get_mask(y_p))
             loss_value = loss_obj(y_t, y_p, sample_weight=sw)

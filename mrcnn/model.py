@@ -2923,8 +2923,8 @@ def norm_boxes_graph(boxes, shape):
     Returns:
         [..., (y1, x1, y2, x2)] in normalized coordinates
     """
-    print('type(boxes): %s' % type(boxes))
-    print('type(shape): %s' % type(shape))
+    # print('type(boxes): %s' % type(boxes))
+    # print('type(shape): %s' % type(shape))
     # shape = tf.Tensor(shape, dtype=np.float32)
     shape = tf.convert_to_tensor(shape)
     h, w = tf.split(tf.cast(shape, tf.float32), 2)

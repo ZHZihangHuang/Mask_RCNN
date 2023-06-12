@@ -755,12 +755,13 @@ def _apply_op_helper(op_type_name, name=None, **keywords):  # pylint: disable=in
   # print('op_type_name: %s' % op_type_name)
   # print('name: %s' % name)
   # print('**keywords: %s' % str(keywords))
+  op_def, g, producer = _GetOpDef(op_type_name, keywords)
   import inspect
   caller_frame = inspect.currentframe().f_back
   caller_name = caller_frame.f_code.co_name
   caller_module = inspect.getmodule(caller_frame).__name__
-  # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
-  op_def, g, producer = _GetOpDef(op_type_name, keywords)
+  if 'add_loss_2_scratch_graph' in str(g):
+    print(f"The caller function is '{caller_name}' in module '{caller_module}'")
   name = name if name else op_type_name
 
   attrs, attr_protos = {}, {}
@@ -818,7 +819,16 @@ def _apply_op_helper(op_type_name, name=None, **keywords):  # pylint: disable=in
       if callback_outputs is not None:
         outputs = callback_outputs
 
-    return output_structure, op_def.is_stateful, op, outputs
+    # return output_structure, op_def.is_stateful, op, outputs
+    if 'add_loss_2_scratch_graph' in str(g):
+      print(f"output_structure: {output_structure}'")
+      print(f"g: {g}'")
+      print(f"op: {op}'")
+      print(f"before outputs: {outputs}'")
+      # import tensorflow as tf
+      # outputs = [tf.constant(3, dtype=tf.float32)]
+      # print(f"after outputs: {outputs}'")
+    return output_structure, g, op, outputs
 
 
 def value_to_attr_value(value, attr_type, arg_name):  # pylint: disable=invalid-name
