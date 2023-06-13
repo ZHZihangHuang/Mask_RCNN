@@ -2042,7 +2042,6 @@ class Operation(object):
         or if `inputs` and `input_types` are incompatible.
       ValueError: if the `node_def` name is not valid.
     """
-    # print('inputs: %s' % inputs)
     if not isinstance(g, Graph):
       raise TypeError(f"Argument g must be a Graph. "
                       f"Received an instance of type {type(g)}")
@@ -3813,21 +3812,36 @@ class Graph(object):
     # outfile.write(f"self._default_original_op: {self._default_original_op}\n")
     # outfile.write(f"op_def: {op_def}\n")
     # outfile.close()
+    # print('self: %s' % self)
 
-    with self._mutation_lock():
-      if 'add_loss_2_scratch_graph' in str(self):
-        print(f"inputs: {inputs}")
-        new_inputs = inputs.copy()
-        ret = Operation(
-            node_def,
-            self,
-            inputs=new_inputs,
-            output_types=dtypes,
-            control_inputs=control_inputs,
-            input_types=input_types,
-            original_op=self._default_original_op,
-            op_def=op_def)
-      else:
+    if 'add_loss_2_scratch_graph' in str(self):
+        print(f"node_def: {node_def}\n")
+        print(f"node_def type: {type(node_def)}\n")
+        print(f"self: {self}\n")
+        print(f"self type: {type(self)}\n")
+        print(f"inputs: {inputs}\n")
+        print(f"inputs type: {type(inputs)}\n")
+        print(f"dtypes: {dtypes}\n")
+        print(f"dtypes type: {type(dtypes)}\n")
+        print(f"control_inputs: {control_inputs}\n")
+        print(f"control_inputs type: {type(control_inputs)}\n")
+        print(f"self._default_original_op: {self._default_original_op}\n")
+        print(f"self._default_original_op type: {type(self._default_original_op)}\n")
+        print(f"op_def: {op_def}\n")
+        print(f"op_def type: {type(op_def)}\n")
+        # ret = Operation(
+        #       node_def,
+        #       self,
+        #       inputs=inputs,
+        #       output_types=dtypes,
+        #       control_inputs=control_inputs,
+        #       input_types=input_types,
+        #       original_op=self._default_original_op,
+        #       op_def=op_def)
+        ret = node_def
+        self._create_op_helper(ret, compute_device=compute_device)
+    else:
+      with self._mutation_lock():
         ret = Operation(
             node_def,
             self,
@@ -3838,6 +3852,22 @@ class Graph(object):
             original_op=self._default_original_op,
             op_def=op_def)
       self._create_op_helper(ret, compute_device=compute_device)
+    if 'loss' in str(self):
+      print('ret: %s' % ret)
+      print(f"node_def: {node_def}\n")
+      print(f"node_def type: {type(node_def)}\n")
+      print(f"self: {self}\n")
+      print(f"self type: {type(self)}\n")
+      print(f"inputs: {inputs}\n")
+      print(f"inputs type: {type(inputs)}\n")
+      print(f"dtypes: {dtypes}\n")
+      print(f"dtypes type: {type(dtypes)}\n")
+      print(f"control_inputs: {control_inputs}\n")
+      print(f"control_inputs type: {type(control_inputs)}\n")
+      print(f"self._default_original_op: {self._default_original_op}\n")
+      print(f"self._default_original_op type: {type(self._default_original_op)}\n")
+      print(f"op_def: {op_def}\n")
+      print(f"op_def type: {type(op_def)}\n")
     return ret
 
   def _create_op_from_tf_operation(self, c_op, compute_device=True):
@@ -3892,18 +3922,30 @@ class Graph(object):
 
     # Apply a kernel label if one has been specified for this op type.
     try:
-      kernel_label = self._op_to_kernel_label_map[op.type]
+      # print('-------------------------op.type: %s' % op.type)
+      if str(type(op)) == "<class 'tensorflow.core.framework.node_def_pb2.NodeDef'>":
+        kernel_label = self._op_to_kernel_label_map[op.name]
+      else:
+        kernel_label = self._op_to_kernel_label_map[op.type]
       op._set_attr("_kernel",  # pylint: disable=protected-access
                    attr_value_pb2.AttrValue(s=compat.as_bytes(kernel_label)))
     except KeyError:
       pass
 
-    op._gradient_function = self._gradient_function_map.get(op.type)  # pylint: disable=protected-access
+    if str(type(op)) == "<class 'tensorflow.core.framework.node_def_pb2.NodeDef'>":
+      pass
+    else:
+      op._gradient_function = self._gradient_function_map.get(op.type)  # pylint: disable=protected-access
 
     # Apply the overriding op type for gradients if one has been specified for
     # this op type.
     try:
-      mapped_op_type = self._gradient_override_map[op.type]
+      # if op.type == "Placeholder":
+      #   print('self._gradient_function_map.get(op.type): %s' % self._gradient_function_map.get(op.type))
+      if str(type(op)) == "<class 'tensorflow.core.framework.node_def_pb2.NodeDef'>":
+        mapped_op_type = self._gradient_override_map[op.name]
+      else:
+        mapped_op_type = self._gradient_override_map[op.type]
       op._set_attr("_gradient_op_type",  # pylint: disable=protected-access
                    attr_value_pb2.AttrValue(s=compat.as_bytes(mapped_op_type)))
     except KeyError:
@@ -3918,7 +3960,10 @@ class Graph(object):
     # messages using it.  Note that this snapshot depends on the actual stack
     # and is independent of the op's _class attribute.
     # pylint: disable=protected-access
-    op._colocation_code_locations = self._snapshot_colocation_stack_metadata()
+    if str(type(op)) == "<class 'tensorflow.core.framework.node_def_pb2.NodeDef'>":
+      pass
+    else:
+      op._colocation_code_locations = self._snapshot_colocation_stack_metadata()
     # pylint: enable=protected-access
 
     if self._colocation_stack:
@@ -4833,7 +4878,10 @@ class Graph(object):
       if device_string is not prior_device_string:
         op._set_device_from_string(device_string)
         prior_device_string = device_string
-    op._device_code_locations = self._snapshot_device_function_stack_metadata()
+    if str(type(op)) == "<class 'tensorflow.core.framework.node_def_pb2.NodeDef'>":
+      pass
+    else:
+      op._device_code_locations = self._snapshot_device_function_stack_metadata()
     # pylint: enable=protected-access
 
   # pylint: disable=g-doc-return-or-yield

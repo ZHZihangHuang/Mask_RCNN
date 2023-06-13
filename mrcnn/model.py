@@ -1841,6 +1841,7 @@ class MaskRCNN():
         self.model_dir = model_dir
         self.set_log_dir()
         self.keras_model = self.build(mode=mode, config=config)
+        print('---------------------debug model built')
         self.keras_model.metrics_tensors = []
 
     def build(self, mode, config):
@@ -2257,8 +2258,13 @@ class MaskRCNN():
             keras.regularizers.l2(self.config.WEIGHT_DECAY)(w) / tf.cast(tf.size(w), tf.float32)
             for w in self.keras_model.trainable_weights
             if 'gamma' not in w.name and 'beta' not in w.name]
+        print('reg_losses: %s' % reg_losses)
         print('tf.add_n(reg_losses): %s' % tf.add_n(reg_losses))
-        self.keras_model.add_loss(KL.Input(tensor=tf.add_n(reg_losses)))
+        # self.keras_model.add_loss(KL.Input(tensor=tf.add_n(reg_losses)))
+        for reg_loss in reg_losses:
+            self.keras_model.add_loss(lambda reg_loss: reg_loss)
+        # self.keras_model.add_loss(KL.Lambda(tensor=tf.add_n(reg_losses)))
+        print('-----------------------debug reg_losses added')
 
         # Compile
         self.keras_model.compile(

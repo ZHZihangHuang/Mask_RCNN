@@ -66,6 +66,8 @@ def filter_empty_gradients(grads_and_vars):
     filtered = []
     vars_with_empty_grads = []
     for grad, var in grads_and_vars:
+        # print('grad: %s' % grad)
+        # print('var: %s' % var)
         if grad is None:
             vars_with_empty_grads.append(var)
         else:
@@ -78,6 +80,7 @@ def filter_empty_gradients(grads_and_vars):
             f"No gradients provided for any variable: {variable}. "
             f"Provided `grads_and_vars` is {grads_and_vars}."
         )
+    print('------------------------------debug vars_with_empty_grads: %s' % vars_with_empty_grads)
     if vars_with_empty_grads:
         logging.warning(
             (

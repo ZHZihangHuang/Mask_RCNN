@@ -806,11 +806,17 @@ def _apply_op_helper(op_type_name, name=None, **keywords):  # pylint: disable=in
                                  name=scope, input_types=input_types,
                                  attrs=attr_protos, op_def=op_def)
 
-    # `outputs` is returned as a separate return value so that the output
-    # tensors can the `op` per se can be decoupled so that the
-    # `op_callbacks` can function properly. See framework/op_callbacks.py
-    # for more details.
-    outputs = op.outputs
+    if str(type(op)) == "<class 'tensorflow.core.framework.node_def_pb2.NodeDef'>":
+      pass
+    elif op.type == "Placeholder":
+      # print('op.outputs: %s' % op.outputs)
+      outputs = op.outputs
+    else:
+      # `outputs` is returned as a separate return value so that the output
+      # tensors can the `op` per se can be decoupled so that the
+      # `op_callbacks` can function properly. See framework/op_callbacks.py
+      # for more details.
+      outputs = op.outputs
     # Conditionally invoke tfdbg v2's op callback(s).
     if op_callbacks.should_invoke_op_callbacks():
       callback_outputs = op_callbacks.invoke_op_callbacks(
@@ -820,11 +826,11 @@ def _apply_op_helper(op_type_name, name=None, **keywords):  # pylint: disable=in
         outputs = callback_outputs
 
     # return output_structure, op_def.is_stateful, op, outputs
-    if 'add_loss_2_scratch_graph' in str(g):
-      print(f"output_structure: {output_structure}'")
-      print(f"g: {g}'")
-      print(f"op: {op}'")
-      print(f"before outputs: {outputs}'")
+    # if 'add_loss_2_scratch_graph' in str(g):
+    #   print(f"output_structure: {output_structure}'")
+    #   print(f"g: {g}'")
+    #   print(f"op: {op}'")
+    #   print(f"before outputs: {outputs}'")
       # import tensorflow as tf
       # outputs = [tf.constant(3, dtype=tf.float32)]
       # print(f"after outputs: {outputs}'")
