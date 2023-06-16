@@ -2254,17 +2254,36 @@ class MaskRCNN():
 
         # Add L2 Regularization
         # Skip gamma and beta weights of batch normalization layers.
+        # tf.compat.v1.disable_eager_execution()
+
+        def compute_loss(y_true, y_pred):
+            # Your loss computation logic here
+            loss = tf.reduce_mean(tf.square(y_true - y_pred))
+            # print('loss.op: %s' % loss.op)
+            # print('loss: %s' % loss)
+            return loss
+
+        # Wrap the loss computation in a lambda function
+        loss_fn = lambda y_true, y_pred: compute_loss(y_true, y_pred)
+
+
         reg_losses = [
             keras.regularizers.l2(self.config.WEIGHT_DECAY)(w) / tf.cast(tf.size(w), tf.float32)
             for w in self.keras_model.trainable_weights
             if 'gamma' not in w.name and 'beta' not in w.name]
-        print('reg_losses: %s' % reg_losses)
-        print('tf.add_n(reg_losses): %s' % tf.add_n(reg_losses))
-        # self.keras_model.add_loss(KL.Input(tensor=tf.add_n(reg_losses)))
-        for reg_loss in reg_losses:
-            self.keras_model.add_loss(lambda reg_loss: reg_loss)
+        # print('reg_losses: %s' % reg_losses)
+        # print('tf.add_n(reg_losses): %s' % tf.add_n(reg_losses))
+
+        # for reg_loss in reg_losses:
+        #     print('-----------------------debug reg_loss: %s' % reg_loss)
+            # self.keras_model.add_loss(lambda reg_loss: reg_loss)
+        # tf.compat.v1.enable_eager_execution()
+        # self.keras_model.add_loss(KL.Input(tensor=tf.add_n(reg_losses).numpy()))
         # self.keras_model.add_loss(KL.Lambda(tensor=tf.add_n(reg_losses)))
-        print('-----------------------debug reg_losses added')
+        print('self.keras_model.inputs: %s' % self.keras_model.inputs)
+        print('self.keras_model.outputs: %s' % self.keras_model.outputs)
+        # self.keras_model.add_loss(compute_loss(self.keras_model.inputs, self.keras_model.outputs))
+        # print('-----------------------debug reg_losses added')
 
         # Compile
         self.keras_model.compile(

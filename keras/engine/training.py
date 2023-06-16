@@ -1583,7 +1583,7 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
                             # raise ValueError(f"iterator: {iterator}"
                             #                  f"iterator type: {type(iterator)}")
                             tmp_logs = self.train_function(iterator)
-                            raise ValueError(f"------------------------------debug2")
+                            # raise ValueError(f"------------------------------debug2")
                             if data_handler.should_sync:
                                 context.async_wait()
                             # No error, now safe to assign to logs.
