@@ -225,6 +225,7 @@ def save_instances_augmentation(image, boxes, masks, class_ids, class_names, aug
         if not captions:
             class_id = class_ids[i]
             score = scores[i] if scores is not None else None
+            print('class_id: %s' % class_id)
             label = class_names[class_id]
             caption = "{} {:.3f}".format(label, score) if score else label
         else:

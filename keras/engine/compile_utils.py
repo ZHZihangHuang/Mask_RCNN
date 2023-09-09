@@ -316,22 +316,20 @@ class LossesContainer(Container):
             loss_values.append(loss_value)
             total_loss_mean_values.append(total_loss_mean_value)
 
-        # raise ValueError(f"-----------------------------debug compiled_loss __call__6")
         if regularization_losses:
+            print('before regularization_losses: %s' % regularization_losses)
             regularization_losses = losses_utils.cast_losses_to_common_dtype(
                 regularization_losses
             )
-            # raise ValueError(f"regularization_losses: {regularization_losses}"
-            #                  f"tf.add_n type: {type(tf.add_n)}")
-            reg_loss = tf.add_n(regularization_losses)
-            # raise ValueError(f"-----------------------------debug compiled_loss __call__6.2")
+            print('----------------------------debug compile_utils.py 324')
+            print('after regularization_losses: %s' % regularization_losses)
+            # regularization_losses_copy = regularization_losses[2:].copy()
+            reg_loss = tf.add_n(regularization_losses[0:2])
             total_loss_mean_values.append(reg_loss)
-            # raise ValueError(f"-----------------------------debug compiled_loss __call__6.3")
             loss_values.append(
                 losses_utils.scale_loss_for_distribution(reg_loss)
             )
 
-        # raise ValueError(f"-----------------------------debug compiled_loss __call__7")
         if loss_values:
             total_loss_mean_values = losses_utils.cast_losses_to_common_dtype(
                 total_loss_mean_values
@@ -481,6 +479,14 @@ class MetricsContainer(Container):
 
     def build(self, y_pred, y_true):
         """One-time setup of metric objects."""
+        print('----------------------------debug compile_utils.py 484')
+        import inspect
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name
+        caller_module = inspect.getmodule(caller_frame).__name__
+        print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+        print('y_pred: %s' % str(y_pred))
+        print('y_true: %s' % str(y_true))
         super(MetricsContainer, self).build(y_pred)
 
         self._metrics = self._maybe_broadcast_to_outputs(y_pred, self._metrics)
@@ -593,8 +599,16 @@ class MetricsContainer(Container):
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         """Updates the state of per-output metrics."""
+        print('----------------------------debug compile_utils.py 604')
+        import inspect
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name
+        caller_module = inspect.getmodule(caller_frame).__name__
+        print(f"The caller function is '{caller_name}' in module '{caller_module}'")
         y_true = self._conform_to_outputs(y_pred, y_true)
         sample_weight = self._conform_to_outputs(y_pred, sample_weight)
+        print('y_pred: %s' % str(y_pred))
+        print('y_true: %s' % str(y_true))
 
         if not self._built:
             self.build(y_pred, y_true)
@@ -672,6 +686,13 @@ class MetricsContainer(Container):
         if str(metric).lower() not in ["accuracy", "acc", "crossentropy", "ce"]:
             metric_obj = metrics_mod.get(metric)
         else:
+            print('----------------------------debug compile_utils.py 675')
+            import inspect
+            caller_frame = inspect.currentframe().f_back
+            caller_name = caller_frame.f_code.co_name
+            caller_module = inspect.getmodule(caller_frame).__name__
+            print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in keras.engine.keras_tensor 238)")
+            print("y_t: %s" % str(y_t))
             y_t_rank = len(y_t.shape.as_list())
             y_p_rank = len(y_p.shape.as_list())
             y_t_last_dim = y_t.shape.as_list()[-1]

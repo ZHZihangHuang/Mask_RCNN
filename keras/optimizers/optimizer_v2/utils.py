@@ -59,6 +59,13 @@ def all_reduce_sum_gradients(grads_and_vars):
 
 def filter_empty_gradients(grads_and_vars):
     """Filter out `(grad, var)` pairs that have a gradient equal to `None`."""
+    print('----------------------------debug utils.py 62')
+    print('grads_and_vars: %s' % grads_and_vars)
+    import inspect
+    caller_frame = inspect.currentframe().f_back
+    caller_name = caller_frame.f_code.co_name
+    caller_module = inspect.getmodule(caller_frame).__name__
+    print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in utils.py 68)")
     grads_and_vars = tuple(grads_and_vars)
     if not grads_and_vars:
         return grads_and_vars
@@ -66,8 +73,6 @@ def filter_empty_gradients(grads_and_vars):
     filtered = []
     vars_with_empty_grads = []
     for grad, var in grads_and_vars:
-        # print('grad: %s' % grad)
-        # print('var: %s' % var)
         if grad is None:
             vars_with_empty_grads.append(var)
         else:
@@ -80,7 +85,6 @@ def filter_empty_gradients(grads_and_vars):
             f"No gradients provided for any variable: {variable}. "
             f"Provided `grads_and_vars` is {grads_and_vars}."
         )
-    # print('------------------------------debug vars_with_empty_grads: %s' % vars_with_empty_grads)
     if vars_with_empty_grads:
         logging.warning(
             (

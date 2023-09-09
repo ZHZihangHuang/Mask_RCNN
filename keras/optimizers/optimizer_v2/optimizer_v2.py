@@ -508,6 +508,32 @@ class OptimizerV2(tf.__internal__.tracking.Trackable):
     def _get_gradients(self, tape, loss, var_list, grad_loss=None):
         """Called in `minimize` to compute gradients from loss."""
         grads = tape.gradient(loss, var_list, grad_loss)
+        def get_graph():
+            if tf.executing_eagerly():
+                global _GRAPH
+                if not getattr(_GRAPH, "graph", None):
+                    _GRAPH.graph = tf.__internal__.FuncGraph("keras_graph")
+                return _GRAPH.graph
+            else:
+                return tf.compat.v1.get_default_graph()
+
+        result = loss * 2.0
+        # print('----------------------------debug optimizer_v2.py 511')
+        # print('loss type: %s' % type(loss))
+        # print('loss dir: %s' % dir(loss))
+        # print('loss consumers: %s' % loss.consumers())
+        # print('loss device: %s' % str(loss.device))
+        # print('loss experimental_ref: %s' % str(loss.experimental_ref()))
+        # print('loss get_shape: %s' % str(loss.get_shape()))
+        # print('loss name: %s' % str(loss.name))
+        # import inspect
+        # caller_frame = inspect.currentframe().f_back
+        # caller_name = caller_frame.f_code.co_name
+        # caller_module = inspect.getmodule(caller_frame).__name__
+        # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+        # print('grads: %s' % grads)
+        # print('var_list: %s' % var_list)
+        # print('grad_loss: %s' % grad_loss)
         return list(zip(grads, var_list))
 
     def _transform_unaggregated_gradients(self, grads_and_vars):
@@ -576,6 +602,12 @@ class OptimizerV2(tf.__internal__.tracking.Trackable):
         grads_and_vars = self._compute_gradients(
             loss, var_list=var_list, grad_loss=grad_loss, tape=tape
         )
+        # print('----------------------------debug optimizer_v2.py 579')
+        # import inspect
+        # caller_frame = inspect.currentframe().f_back
+        # caller_name = caller_frame.f_code.co_name
+        # caller_module = inspect.getmodule(caller_frame).__name__
+        # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
         return self.apply_gradients(grads_and_vars, name=name)
 
     def _compute_gradients(self, loss, var_list, grad_loss=None, tape=None):
@@ -630,6 +662,15 @@ class OptimizerV2(tf.__internal__.tracking.Trackable):
             loss = self._transform_loss(loss)
 
         var_list = tf.nest.flatten(var_list)
+        # print('----------------------------debug optimizer_v2.py 639')
+        # import inspect
+        # caller_frame = inspect.currentframe().f_back
+        # caller_name = caller_frame.f_code.co_name
+        # caller_module = inspect.getmodule(caller_frame).__name__
+        # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+        # print('var_list: %s' % var_list)
+        # print('tape: %s' % tape)
+        # print('loss: %s' % loss)
         with tf.name_scope(self._name + "/gradients"):
             grads_and_vars = self._get_gradients(
                 tape, loss, var_list, grad_loss
@@ -686,6 +727,12 @@ class OptimizerV2(tf.__internal__.tracking.Trackable):
           ValueError: If none of the variables have gradients.
           RuntimeError: If called in a cross-replica context.
         """
+        # print('----------------------------debug optimizer_v2.py 689')
+        # import inspect
+        # caller_frame = inspect.currentframe().f_back
+        # caller_name = caller_frame.f_code.co_name
+        # caller_module = inspect.getmodule(caller_frame).__name__
+        # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
         grads_and_vars = optimizer_utils.filter_empty_gradients(grads_and_vars)
         var_list = [v for (_, v) in grads_and_vars]
 

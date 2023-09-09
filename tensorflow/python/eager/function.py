@@ -2517,6 +2517,12 @@ class Function(object):
 
   def _get_concrete_function_internal_garbage_collected(self, *args, **kwargs):
     """Returns a concrete function which cleans up its graph function."""
+    print('----------------------------debug function.py 2520')
+    import inspect
+    caller_frame = inspect.currentframe().f_back
+    caller_name = caller_frame.f_code.co_name
+    caller_module = inspect.getmodule(caller_frame).__name__
+    print(f"The caller function is '{caller_name}' in module '{caller_module}'")
     if self.input_signature:
       args, kwargs = None, None
     with self._lock:
@@ -2651,6 +2657,12 @@ class Function(object):
 
   def _create_graph_function(self, args, kwargs):
     """Create a `ConcreteFunction` from `args` and `kwargs`."""
+    print('----------------------------debug function.py 2654')
+    import inspect
+    caller_frame = inspect.currentframe().f_back
+    caller_name = caller_frame.f_code.co_name
+    caller_module = inspect.getmodule(caller_frame).__name__
+    print(f"The caller function is '{caller_name}' in module '{caller_module}'")
     self.tracing_count += 1
 
     if self.input_signature is None:
@@ -2709,6 +2721,12 @@ class Function(object):
       RuntimeError: If there's an internal bug (inconsistency) in handling
         shape relaxation retracing.
     """
+    # print('----------------------------debug function.py 2718')
+    # import inspect
+    # caller_frame = inspect.currentframe().f_back
+    # caller_name = caller_frame.f_code.co_name
+    # caller_module = inspect.getmodule(caller_frame).__name__
+    # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
     if self.input_signature is None or args is not None or kwargs is not None:
       args, kwargs, filtered_flat_args = (
           self._function_spec.canonicalize_function_inputs(*args, **kwargs))

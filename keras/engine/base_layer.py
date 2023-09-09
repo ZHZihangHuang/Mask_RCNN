@@ -980,6 +980,15 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
           RuntimeError: if `super().__init__()` was not called in the
             constructor.
         """
+        # print('----------------------------debug base_layer.py 983')
+        # print('str(self.name): %s' % str(self.name))
+        # import inspect
+        # caller_frame = inspect.currentframe().f_back
+        # caller_name = caller_frame.f_code.co_name
+        # caller_module = inspect.getmodule(caller_frame).__name__
+        # print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in base_layer.py 989)")
+        # print('args: %s' % str(args))
+        # print('kwargs: %s' % str(kwargs))
         if not hasattr(self, "_thread_local"):
             raise RuntimeError(
                 "You must call `super().__init__()` in the layer constructor."
@@ -997,8 +1006,11 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
         # - input_spec compatibility is only checked against `inputs`
         # - mixed precision casting (autocast) is only applied to `inputs`,
         #   not to any other argument.
+        # print('----------------------------debug base_layer.py 1009')
         inputs, args, kwargs = self._call_spec.split_out_first_arg(args, kwargs)
+        # print('----------------------------debug base_layer.py 1011')
         input_list = tf.nest.flatten(inputs)
+        # print('----------------------------debug base_layer.py 1013')
 
         # Functional Model construction mode is invoked when `Layer`s are called
         # on symbolic `KerasTensor`s, i.e.:
@@ -1008,6 +1020,7 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
         if _in_functional_construction_mode(
             self, inputs, args, kwargs, input_list
         ):
+            # print('----------------------------debug base_layer.py 1023')
             return self._functional_construction_call(
                 inputs, args, kwargs, input_list
             )
@@ -1032,6 +1045,7 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
         input_masks, mask_is_implicit = self._get_input_masks(
             inputs, input_list, args, kwargs
         )
+        # print('----------------------------debug base_layer.py 1048')
         if self._expects_mask_arg and mask_is_implicit:
             kwargs["mask"] = input_masks
 
@@ -1094,7 +1108,11 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
                 with autocast_variable.enable_auto_cast_variables(
                     self._compute_dtype_object
                 ):
+
+                    # print('----------------------------debug base_layer.py 1112')
+                    # print('inputs: %s' % str(inputs))
                     outputs = call_fn(inputs, *args, **kwargs)
+                    # print('outputs: %s' % str(outputs))
 
                 if self._activity_regularizer:
                     self._handle_activity_regularization(inputs, outputs)
@@ -1456,6 +1474,13 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
             loss._unconditional_loss = True
             return loss
 
+        import inspect
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name
+        caller_module = inspect.getmodule(caller_frame).__name__
+        print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in base_layer.py 1463)")
+        print('before losses: %s' % losses)
+        print('self.name: %s' % str(self.name))
         losses = tf.nest.flatten(losses)
 
         callable_losses = []
@@ -1491,6 +1516,8 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
 
         self._eager_losses.extend(eager_losses)
 
+        print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in base_layer.py 1450)")
+        print('symbolic_losses: %s' % symbolic_losses)
         for symbolic_loss in symbolic_losses:
             if getattr(self, "_is_graph_network", False):
                 print('symbolic_loss: %s' % symbolic_loss)
@@ -2343,6 +2370,11 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
                 keras_tensor.KerasTensor, output_signature
             )
         else:
+            # import inspect
+            # caller_frame = inspect.currentframe().f_back
+            # caller_name = caller_frame.f_code.co_name
+            # caller_module = inspect.getmodule(caller_frame).__name__
+            # print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in base_layer.py 2358)")
             return self._infer_output_signature(
                 inputs, args, kwargs, input_masks
             )
@@ -2350,6 +2382,18 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
     def _infer_output_signature(self, inputs, args, kwargs, input_masks):
         """Call the layer on input KerasTensors, returns output KerasTensors."""
 
+        # if str(self.name) == 'add_loss_2':
+        #     print('----------------------------debug base_layer.py 2388')
+        #     import inspect
+        #     caller_frame = inspect.currentframe().f_back
+        #     caller_name = caller_frame.f_code.co_name
+        #     caller_module = inspect.getmodule(caller_frame).__name__
+        #     print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in base_layer.py 2372)")
+        #     print('self: %s' % str(self))
+        #     print('inputs: %s' % str(inputs))
+        #     print('args: %s' % str(args))
+        #     print('kwargs: %s' % str(kwargs))
+        #     print('input_masks: %s' % str(input_masks))
         keras_tensor_inputs = inputs
         call_fn = self.call
         # Wrapping `call` function in autograph to allow for dynamic control
@@ -2392,6 +2436,7 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
                 keras_tensor.keras_tensor_to_placeholder, input_masks
             )
 
+            # print('----------------------------debug base_layer.py 2441')
             with backend.name_scope(self._name_scope()):
                 with autocast_variable.enable_auto_cast_variables(
                     self._compute_dtype_object
@@ -2412,13 +2457,16 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
                 keras_tensor.keras_tensor_from_tensor, outputs
             )
 
+        # print('----------------------------debug base_layer.py 2462')
         self._set_save_spec(keras_tensor_inputs, args, kwargs)
         if hasattr(self, "_set_inputs") and not self.inputs:
             # TODO(kaftan): figure out if we need to do this at all
             # Subclassed network: explicitly set metadata normally set by
             # a call to self._set_inputs().
             self._set_inputs(inputs, outputs)
+            # print('----------------------------debug base_layer.py 2469')
         del scratch_graph
+        # print('----------------------------debug base_layer.py 2471')
         return outputs
 
     def _functional_construction_call(self, inputs, args, kwargs, input_list):
@@ -2496,6 +2544,13 @@ class Layer(tf.Module, version_utils.LayerVersionSelector):
         ):
             # Check input assumptions set after layer building, e.g. input
             # shape.
+            # if str(self.name) == 'add_loss_2':
+            #     print('----------------------------debug base_layer.py 2550')
+            #     import inspect
+            #     caller_frame = inspect.currentframe().f_back
+            #     caller_name = caller_frame.f_code.co_name
+            #     caller_module = inspect.getmodule(caller_frame).__name__
+            #     print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in base_layer.py 2525)")
             outputs = self._keras_tensor_symbolic_call(
                 inputs, input_masks, args, kwargs
             )

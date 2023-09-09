@@ -895,6 +895,13 @@ class GeneratorDataAdapter(DataAdapter):
         # Note that dataset API takes a callable that creates a generator
         # object, rather than generator itself, which is why we define a
         # function here.
+        print('----------------------------debug keras engine data_adapter.py 898')
+        import inspect
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name
+        caller_module = inspect.getmodule(caller_frame).__name__
+        print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+        print('x: %s' % str(x))
         generator_fn = self._handle_multiprocessing(
             x, workers, use_multiprocessing, max_queue_size
         )
@@ -916,7 +923,18 @@ class GeneratorDataAdapter(DataAdapter):
         """Standardizes a batch output by a generator."""
         # Removes `None`s.
         x, y, sample_weight = unpack_x_y_sample_weight(data)
+        # print('----------------------------debug data_adapter.py 919')
+        # print('x: %s' % str(x))
+        # print('y: %s' % str(y))
+        # print('sample_weight: %s' % str(sample_weight))
         data = pack_x_y_sample_weight(x, y, sample_weight)
+        # print('----------------------------debug data_adapter.py 920')
+        # import inspect
+        # caller_frame = inspect.currentframe().f_back
+        # caller_name = caller_frame.f_code.co_name
+        # caller_module = inspect.getmodule(caller_frame).__name__
+        # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+        # print('data: %s' % str(data))
 
         data = tf.__internal__.nest.list_to_tuple(data)
 

@@ -6894,16 +6894,15 @@ def placeholder(dtype, shape=None, name=None):
   if shape is None:
     shape = None
   shape = _execute.make_shape(shape, "shape")
+  # import inspect
+  # caller_frame = inspect.currentframe().f_back
+  # caller_name = caller_frame.f_code.co_name
+  # caller_module = inspect.getmodule(caller_frame).__name__
+  # print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in gen_array_ops.py 6902)")
+  # print(f"name: {name}")
+  # print(f"dtype: {dtype}")
   _, placeholder_g, _op, _outputs = _op_def_library._apply_op_helper(
         "Placeholder", dtype=dtype, shape=shape, name=name)
-  import inspect
-  caller_frame = inspect.currentframe().f_back
-  caller_name = caller_frame.f_code.co_name
-  caller_module = inspect.getmodule(caller_frame).__name__
-  # print('placeholder_g: %s' % placeholder_g)
-  if 'add_loss_2_scratch_graph' in str(placeholder_g):
-    print(f"The caller function is '{caller_name}' in module '{caller_module}'")
-    print(f"name: {name}")
   _result = _outputs[:]
   if _execute.must_record_gradient():
     _attrs = ("dtype", _op._get_attr_type("dtype"), "shape",
@@ -6912,7 +6911,6 @@ def placeholder(dtype, shape=None, name=None):
     _execute.record_gradient(
         "Placeholder", _inputs_flat, _attrs, _result)
   _result, = _result
-  # print('_result: %s' % _result)
   return _result
 
 Placeholder = tf_export("raw_ops.Placeholder")(_ops.to_raw_op(placeholder))

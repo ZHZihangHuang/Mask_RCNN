@@ -3800,60 +3800,24 @@ class Graph(object):
     caller_frame = inspect.currentframe().f_back
     caller_name = caller_frame.f_code.co_name
     caller_module = inspect.getmodule(caller_frame).__name__
-    # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+    if 'add_loss_2_scratch_graph' in str(self) or 'add_loss_1_scratch_graph' in str(self):
+      print(f"The caller function is '{caller_name}' in module '{caller_module}' (currently in ops.py 3804)")
+      print('ops.py 3805 str(self): %s' % str(self))
 
-    # sys.stdout.flush()
-    # outfile = open('debug.txt', 'a')
-    # outfile.write(f"node_def: {node_def}\n")
-    # outfile.write(f"self: {self}\n")
-    # outfile.write(f"inputs: {inputs}\n")
-    # outfile.write(f"dtypes: {dtypes}\n")
-    # outfile.write(f"control_inputs: {control_inputs}\n")
-    # outfile.write(f"self._default_original_op: {self._default_original_op}\n")
-    # outfile.write(f"op_def: {op_def}\n")
-    # outfile.close()
-    # print('self: %s' % self)
-
-    if 'add_loss_2_scratch_graph' in str(self):
-    #     print(f"node_def: {node_def}\n")
-    #     print(f"node_def type: {type(node_def)}\n")
-    #     print(f"self: {self}\n")
-    #     print(f"self type: {type(self)}\n")
-    #     print(f"inputs: {inputs}\n")
-    #     print(f"inputs type: {type(inputs)}\n")
-    #     print(f"dtypes: {dtypes}\n")
-    #     print(f"dtypes type: {type(dtypes)}\n")
-    #     print(f"control_inputs: {control_inputs}\n")
-    #     print(f"control_inputs type: {type(control_inputs)}\n")
-    #     print(f"self._default_original_op: {self._default_original_op}\n")
-    #     print(f"self._default_original_op type: {type(self._default_original_op)}\n")
-    #     print(f"op_def: {op_def}\n")
-    #     print(f"op_def type: {type(op_def)}\n")
-        # ret = Operation(
-        #       node_def,
-        #       self,
-        #       inputs=inputs,
-        #       output_types=dtypes,
-        #       control_inputs=control_inputs,
-        #       input_types=input_types,
-        #       original_op=self._default_original_op,
-        #       op_def=op_def)
-        ret = node_def
-        self._create_op_helper(ret, compute_device=compute_device)
-    else:
-      with self._mutation_lock():
-        ret = Operation(
-            node_def,
-            self,
-            inputs=inputs,
-            output_types=dtypes,
-            control_inputs=control_inputs,
-            input_types=input_types,
-            original_op=self._default_original_op,
-            op_def=op_def)
-      self._create_op_helper(ret, compute_device=compute_device)
-    # if 'loss' in str(self):
-    #   print('ret: %s' % ret)
+    # skip_pperation = False
+    # # add_loss_scratch_graph_list = ['add_loss_5_scratch_graph', 'add_loss_2_scratch_graph', 'add_loss_8_scratch_graph', 'add_loss_11_scratch_graph', 'add_loss_14_scratch_graph']
+    # add_loss_scratch_graph_list = ['add_loss_2_scratch_graph']
+    # for add_loss_scratch_graph in add_loss_scratch_graph_list:
+    #   if add_loss_scratch_graph in str(self):
+    #     skip_pperation = True
+    # if skip_pperation:
+    #   # print('if node_def: %s' % node_def)
+    #   # if 'loss' in str(self):
+    #   import inspect
+    #   caller_frame = inspect.currentframe().f_back
+    #   caller_name = caller_frame.f_code.co_name
+    #   caller_module = inspect.getmodule(caller_frame).__name__
+    #   print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in Graph)")
     #   print(f"node_def: {node_def}\n")
     #   print(f"node_def type: {type(node_def)}\n")
     #   print(f"self: {self}\n")
@@ -3868,6 +3832,21 @@ class Graph(object):
     #   print(f"self._default_original_op type: {type(self._default_original_op)}\n")
     #   print(f"op_def: {op_def}\n")
     #   print(f"op_def type: {type(op_def)}\n")
+    #   ret = node_def
+    #   self._create_op_helper(ret, compute_device=compute_device)
+
+    # print('else node_def: %s' % node_def)
+    with self._mutation_lock():
+      ret = Operation(
+          node_def,
+          self,
+          inputs=inputs,
+          output_types=dtypes,
+          control_inputs=control_inputs,
+          input_types=input_types,
+          original_op=self._default_original_op,
+          op_def=op_def)
+    self._create_op_helper(ret, compute_device=compute_device)
     return ret
 
   def _create_op_from_tf_operation(self, c_op, compute_device=True):

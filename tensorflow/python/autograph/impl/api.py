@@ -318,6 +318,12 @@ def converted_call(f, args, kwargs, caller_fn_scope=None, options=None):
     Any, the result of executing a possibly-converted `f` with the given
       arguments.
   """
+  # print('----------------------------debug api.py 321')
+  # import inspect
+  # caller_frame = inspect.currentframe().f_back
+  # caller_name = caller_frame.f_code.co_name
+  # caller_module = inspect.getmodule(caller_frame).__name__
+  # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
   logging.log(1, 'Converted call: %s\n    args: %s\n    kwargs: %s\n', f, args,
               kwargs)
 
@@ -448,6 +454,12 @@ def converted_call(f, args, kwargs, caller_fn_scope=None, options=None):
 
 def _call_unconverted(f, args, kwargs, options, update_cache=True):
   """Calls the original function without converting with AutoGraph."""
+  # print('----------------------------debug api.py 451')
+  # import inspect
+  # caller_frame = inspect.currentframe().f_back
+  # caller_name = caller_frame.f_code.co_name
+  # caller_module = inspect.getmodule(caller_frame).__name__
+  # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
   if update_cache:
     conversion.cache_allowlisted(f, options)
 

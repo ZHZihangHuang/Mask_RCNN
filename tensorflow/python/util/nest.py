@@ -448,6 +448,12 @@ def flatten(structure, expand_composites=False):
   Raises:
     TypeError: The nest is or contains a dict with non-sortable keys.
   """
+  # print('----------------------------debug nest.py 13')
+  # import inspect
+  # caller_frame = inspect.currentframe().f_back
+  # caller_name = caller_frame.f_code.co_name
+  # caller_module = inspect.getmodule(caller_frame).__name__
+  # print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in nesy.py 456)")
   if structure is None:
     return [None]
   expand_composites = bool(expand_composites)
@@ -803,6 +809,17 @@ def pack_sequence_as(structure, flat_sequence, expand_composites=False):
       atom counts.
     TypeError: `structure` is or contains a dict with non-sortable keys.
   """
+  # if isinstance(structure, tuple):
+  #   print('----------------------------debug nest.py 813')
+  #   import inspect
+  #   caller_frame = inspect.currentframe().f_back
+  #   caller_name = caller_frame.f_code.co_name
+  #   caller_module = inspect.getmodule(caller_frame).__name__
+  #   print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in base_layer.py 989)")
+  #   print('flat_sequence: %s' % flat_sequence)
+  #   print('structure: %s' % str(structure))
+  #   print('structure type: %s' % type(structure))
+  #   print('expand_composites: %s' % str(expand_composites))
   return _pack_sequence_as(structure, flat_sequence, expand_composites)
 
 
@@ -892,6 +909,15 @@ def map_structure(func, *structure, **kwargs):
       each other by type.
     ValueError: If wrong keyword arguments are provided.
   """
+  # if isinstance(structure, tuple):
+  #   print('----------------------------debug nest.py 913')
+  #   import inspect
+  #   caller_frame = inspect.currentframe().f_back
+  #   caller_name = caller_frame.f_code.co_name
+  #   caller_module = inspect.getmodule(caller_frame).__name__
+  #   print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+  #   print('structure: %s' % str(structure))
+
   if not callable(func):
     raise TypeError("func must be callable, got: %s" % func)
 

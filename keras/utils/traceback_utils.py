@@ -62,11 +62,25 @@ def filter_traceback(fn):
 
         filtered_tb = None
         try:
+            # print('----------------------------debug traceback_utils.py 65')
+            # import inspect
+            # caller_frame = inspect.currentframe().f_back
+            # caller_name = caller_frame.f_code.co_name
+            # caller_module = inspect.getmodule(caller_frame).__name__
+            # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
             return fn(*args, **kwargs)
         except Exception as e:
+            # print('----------------------------debug traceback_utils.py 73')
+            # import inspect
+            # caller_frame = inspect.currentframe().f_back
+            # caller_name = caller_frame.f_code.co_name
+            # caller_module = inspect.getmodule(caller_frame).__name__
+            # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+            # print('fn: %s' % fn)
+            # print('Exception: %s' % e)
             filtered_tb = _process_traceback_frames(e.__traceback__)
             # To get the full stack trace, call:
-            # `tf.debugging.disable_traceback_filtering()`
+            # tf.debugging.disable_traceback_filtering()
             raise e.with_traceback(filtered_tb) from None
         finally:
             del filtered_tb
@@ -90,6 +104,12 @@ def inject_argument_info_in_traceback(fn, object_name=None):
     """
 
     def error_handler(*args, **kwargs):
+        # print('----------------------------debug traceback_utils.py 101')
+        # import inspect
+        # caller_frame = inspect.currentframe().f_back
+        # caller_name = caller_frame.f_code.co_name
+        # caller_module = inspect.getmodule(caller_frame).__name__
+        # print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in base_layer.py 989)")
         signature = None
         bound_signature = None
         try:

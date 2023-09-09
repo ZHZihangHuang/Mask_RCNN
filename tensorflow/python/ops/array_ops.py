@@ -3338,11 +3338,11 @@ def placeholder(dtype, shape=None, name=None):
   performance with tf.function](https://www.tensorflow.org/guide/function).
   @end_compatibility
   """
-  import inspect
-  caller_frame = inspect.currentframe().f_back
-  caller_name = caller_frame.f_code.co_name
-  caller_module = inspect.getmodule(caller_frame).__name__
-  # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+  # import inspect
+  # caller_frame = inspect.currentframe().f_back
+  # caller_name = caller_frame.f_code.co_name
+  # caller_module = inspect.getmodule(caller_frame).__name__
+  # print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in array_ops.py 3345)")
   if context.executing_eagerly():
     raise RuntimeError("tf.placeholder() is not compatible with "
                        "eager execution.")
@@ -3403,7 +3403,7 @@ def placeholder_with_default(input, shape, name=None):  # pylint: disable=redefi
   caller_frame = inspect.currentframe().f_back
   caller_name = caller_frame.f_code.co_name
   caller_module = inspect.getmodule(caller_frame).__name__
-  # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+  # print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in array_ops.py 3406)")
   return gen_array_ops.placeholder_with_default(input, shape, name)
 
 

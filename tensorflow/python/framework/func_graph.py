@@ -706,7 +706,10 @@ class FuncGraph(ops.Graph):
     Returns:
       An `Operation` object.
     """
-    
+    import inspect
+    caller_frame = inspect.currentframe().f_back
+    caller_name = caller_frame.f_code.co_name
+    caller_module = inspect.getmodule(caller_frame).__name__
     if self.capture_by_value and op_type in [
         "ReadVariableOp", "ResourceGather"
     ]:
@@ -733,15 +736,19 @@ class FuncGraph(ops.Graph):
         inp = ctxt.AddValue(inp)
       inp = self.capture(inp)
       captured_inputs.append(inp)
-    import inspect
-    caller_frame = inspect.currentframe().f_back
-    caller_name = caller_frame.f_code.co_name
-    caller_module = inspect.getmodule(caller_frame).__name__
-    # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
     # print('FuncGraph.get_name_scope(): %s' % FuncGraph.get_name_scope(self))
-    # if 'add_loss_2_scratch_graph' in str(self):
-    #   print(f"The caller function is '{caller_name}' in module '{caller_module}'")
-    #   print(f"self: {self}\n")
+    # if 'add_loss_2_scratch_graph' in str(self) or 'add_loss_1_scratch_graph' in str(self) or 'train_function' in str(self):
+    #   print('----------------------------debug func_graph.py 741')
+    #   print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in func_graph.py 742)")
+    #   print(f"func_graph.py 743 self: {self}\n")
+    #   print('op_type: %s' % op_type)
+    #   print('captured_inputs: %s' % captured_inputs)
+    #   print('dtypes: %s' % dtypes)
+    #   print('input_types: %s' % input_types)
+    #   print('name: %s' % name)
+    #   print('attrs: %s' % attrs)
+    #   print('op_def: %s' % op_def)
+    #   print('compute_device: %s' % compute_device)
     return super(FuncGraph, self)._create_op_internal(  # pylint: disable=protected-access
         op_type, captured_inputs, dtypes, input_types, name, attrs, op_def,
         compute_device)
@@ -783,24 +790,8 @@ class FuncGraph(ops.Graph):
       if name is None:
         name = tensor.op.name
       inner_graph = tensor.graph
+      inner_graph_list = []
       while inner_graph is not None and isinstance(inner_graph, FuncGraph):
-        # outfile = open('debug.txt', 'a')
-        # import sys
-        # print('---------------------------debug func_graph1')
-        # print('---------------------------self %s' % self)
-        # print('---------------------------inner_graph： %s' % inner_graph)
-        # sys.stdout.flush()
-        # outfile.close()
-        # raise ValueError(f"------------------------------func_graph1")
-        # raise errors.InaccessibleTensorError(
-        #       f"{tensor!r} is out of scope and cannot be used here. Use return "
-        #       "values, explicit Python locals or TensorFlow collections to "
-        #       "access it.\n"
-        #       "Please see https://www.tensorflow.org/guide/function#all_outputs_of_a_tffunction_must_be_return_values "
-        #       "for more information.\n\n"
-        #       f"{tensor!r} was defined here:\n{tensor_traceback}\n\n"
-        #       f"The tensor {tensor!r} cannot be accessed from {self}, because "
-        #       f"it was defined in {tensor.graph}, which is out of scope.")
         if inner_graph is self:
           try:
             tb = tensor.op.traceback
@@ -812,9 +803,17 @@ class FuncGraph(ops.Graph):
               tensor_traceback_list.extend(
                   [f"  {line}" for line in frame.split("\n") if line.strip()])
             tensor_traceback = "\n".join(tensor_traceback_list)
+          print('----------------------------debug func_graph.py 807')
+          import inspect
+          caller_frame = inspect.currentframe().f_back
+          caller_name = caller_frame.f_code.co_name
+          caller_module = inspect.getmodule(caller_frame).__name__
+          print(f"The caller function is '{caller_name}' in module '{caller_module}' (current func capture)")
+          print('self: %s' % self)
+          print('inner_graph_list: %s' % inner_graph_list)
           # Keep in sync with tfe_wrapper.cc.
           # TODO(b/200991648): Unify those two paths.
-          raise errors.InaccessibleTensorError('---------------------------debug func_graph2')
+          # raise errors.InaccessibleTensorError('---------------------------debug func_graph2 inner_graph: %s count: %s self: %s' % (inner_graph, count, self))
           raise errors.InaccessibleTensorError(
               f"{tensor!r} is out of scope and cannot be used here. Use return "
               "values, explicit Python locals or TensorFlow collections to "
@@ -824,7 +823,10 @@ class FuncGraph(ops.Graph):
               f"{tensor!r} was defined here:\n{tensor_traceback}\n\n"
               f"The tensor {tensor!r} cannot be accessed from {self}, because "
               f"it was defined in {tensor.graph}, which is out of scope.")
+        inner_graph_list.append(inner_graph.outer_graph)
         inner_graph = inner_graph.outer_graph
+        # if isinstance(inner_graph, FuncGraph) and count == 2:
+        #   raise errors.InaccessibleTensorError('---------------------------debug func_graph2 inner_graph: %s count: %s self: %s' % (inner_graph, count, self))
       return self._capture_helper(tensor, name)
     return tensor
 
@@ -1166,6 +1168,12 @@ def func_graph_from_py_func(name,
     TypeError: If any of `python_func`'s return values is neither `None`, a
       `Tensor` or a `tf.experimental.ExtensionType`.
   """
+  # print('----------------------------debug func_graph.py 1187')
+  # import inspect
+  # caller_frame = inspect.currentframe().f_back
+  # caller_name = caller_frame.f_code.co_name
+  # caller_module = inspect.getmodule(caller_frame).__name__
+  # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
   if op_return_value is not None:
     assert isinstance(op_return_value, ops.Tensor), op_return_value
   if func_graph is None:
@@ -1246,6 +1254,12 @@ def func_graph_from_py_func(name,
         def autograph_handler(*args, **kwargs):
           """Calls a converted version of original_func."""
           # TODO(mdan): Push this block higher in tf.function's call stack.
+          print('----------------------------debug func_graph.py 1267')
+          import inspect
+          caller_frame = inspect.currentframe().f_back
+          caller_name = caller_frame.f_code.co_name
+          caller_module = inspect.getmodule(caller_frame).__name__
+          print(f"The caller function is '{caller_name}' in module '{caller_module}'")
           try:
             return autograph.converted_call(
                 original_func,
@@ -1257,6 +1271,7 @@ def func_graph_from_py_func(name,
                     user_requested=True,
                 ))
           except Exception as e:  # pylint:disable=broad-except
+            print('----------------------------debug func_graph.py 1284')
             if hasattr(e, "ag_error_metadata"):
               raise e.ag_error_metadata.to_exception(e)
             else:

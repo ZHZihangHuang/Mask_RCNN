@@ -760,9 +760,15 @@ def _apply_op_helper(op_type_name, name=None, **keywords):  # pylint: disable=in
   caller_frame = inspect.currentframe().f_back
   caller_name = caller_frame.f_code.co_name
   caller_module = inspect.getmodule(caller_frame).__name__
-  if 'add_loss_2_scratch_graph' in str(g):
-    print(f"The caller function is '{caller_name}' in module '{caller_module}'")
-  name = name if name else op_type_name
+  if 'add_loss_1_scratch_graph' in str(g):
+    print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in op_def_library.py 764)")
+    name = 'op_def_library_debug_test1'
+    # name = name if name else op_type_name
+  elif 'add_loss_2_scratch_graph' in str(g):
+    print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in op_def_library.py 764)")
+    name = 'op_def_library_debug_test2'
+  else:
+    name = name if name else op_type_name
 
   attrs, attr_protos = {}, {}
   default_type_attr_map, allowed_list_attr_map = {}, {}

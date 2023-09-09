@@ -669,6 +669,12 @@ class Function(core.GenericFunction, trackable.Trackable):
       # and so variable initializers can't depend on function arguments. This is
       # better than the alternative, tracing the initialization graph but giving
       # the user a variable type they didn't want.
+      print('----------------------------debug def_function.py 672')
+      import inspect
+      caller_frame = inspect.currentframe().f_back
+      caller_name = caller_frame.f_code.co_name
+      caller_module = inspect.getmodule(caller_frame).__name__
+      print(f"The caller function is '{caller_name}' in module '{caller_module}'")
       default_graph = ops.get_default_graph()
       with default_graph._variable_creator_scope(scope, priority=50):  # pylint: disable=protected-access
         # __wrapped__ allows AutoGraph to swap in a converted function. We give
@@ -746,7 +752,12 @@ class Function(core.GenericFunction, trackable.Trackable):
       kwds: Keyword arguments to the python callable.
       add_initializers_to: Where to collect variable initializers, if not None.
     """
-
+    print('----------------------------debug def_function.py 755')
+    import inspect
+    caller_frame = inspect.currentframe().f_back
+    caller_name = caller_frame.f_code.co_name
+    caller_module = inspect.getmodule(caller_frame).__name__
+    print(f"The caller function is '{caller_name}' in module '{caller_module}'")
     if self._input_signature is not None:
       arglen = len(self._input_signature)
       arg_names_len = len(self.function_spec.arg_names)
@@ -887,6 +898,12 @@ class Function(core.GenericFunction, trackable.Trackable):
   @traceback_utils.filter_traceback
   def __call__(self, *args, **kwds):
     # Implements GenericFunction.__call__.
+    # print('----------------------------debug def_function.py 901')
+    # import inspect
+    # caller_frame = inspect.currentframe().f_back
+    # caller_name = caller_frame.f_code.co_name
+    # caller_module = inspect.getmodule(caller_frame).__name__
+    # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
     if self._run_functions_eagerly:
       with trace.Trace(self._name, tf_function_call="eager"):
         return self._python_function(*args, **kwds)
@@ -933,6 +950,12 @@ class Function(core.GenericFunction, trackable.Trackable):
 
   def _call(self, *args, **kwds):
     """Calls the graph function."""
+    # print('----------------------------debug def_function.py 947')
+    # import inspect
+    # caller_frame = inspect.currentframe().f_back
+    # caller_name = caller_frame.f_code.co_name
+    # caller_module = inspect.getmodule(caller_frame).__name__
+    # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
     self._lock.acquire()
     if ALLOW_DYNAMIC_VARIABLE_CREATION:
       condition = self._created_variables and self._stateful_fn is None

@@ -988,20 +988,41 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
           `{'loss': 0.2, 'accuracy': 0.7}`.
         """
         x, y, sample_weight = data_adapter.unpack_x_y_sample_weight(data)
+        print('----------------------------debug training.py 991')
+        import inspect
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name
+        caller_module = inspect.getmodule(caller_frame).__name__
+        print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+        print('x: %s' % str(x))
+        print('y: %s' % str(y))
+        print('data: %s' % str(data))
+        print('self.trainable_variables: %s' % str(self.trainable_variables))
         # Run forward pass.
-        # raise ValueError(f"-----------------------------------debug train_step1")
         with tf.GradientTape() as tape:
-            # raise ValueError(f"-----------------------------------debug train_step1.1")
             y_pred = self(x, training=True)
-            # raise ValueError(f"-----------------------------------debug train_step1.2")
             loss = self.compute_loss(x, y, y_pred, sample_weight)
-            # raise ValueError(f"-----------------------------------debug train_step1.3")
-        # raise ValueError(f"-----------------------------------debug train_step2")
-        self._validate_target_and_loss(y, loss)
-        # Run backwards pass.
-        # raise ValueError(f"-----------------------------------debug train_step3")
+        # print('----------------------------debug training.py 996')
+        # self._validate_target_and_loss(y, loss)
+        # print('----------------------------debug training.py 998')
+        # # Run backwards pass.
+        # print('loss: %s' % str(loss))
+        # print('tf.executing_eagerly(): %s' % tf.executing_eagerly())
+        # print('tf.__version__: %s' % tf.__version__)
+        # print('type(loss): %s' % type(loss))
+        # # placeholder = tf.compat.v1.placeholder(dtype=tf.float32, shape=(None,))
+        # # result = loss * 2.0
+        # with tf.compat.v1.Session() as sess:
+        #     # Evaluate the tensor using the session
+        #     # feed_data = [1.0, 2.0, 3.0]
+        #     # computed_result = sess.run(result, feed_dict={placeholder.ref(): feed_data})
+        #     # print('computed_result: %s' % str(computed_result))
+        #     env_vars = sess.list_devices()
+        #     # Print the environment variables
+        #     for var in env_vars:
+        #         print("env_var: %s" % var)
+        print('y_pred: %s' % str(y_pred))
         self.optimizer.minimize(loss, self.trainable_variables, tape=tape)
-        # raise ValueError(f"-----------------------------------debug train_step4")
         return self.compute_metrics(x, y, y_pred, sample_weight)
 
     def compute_loss(self, x=None, y=None, y_pred=None, sample_weight=None):
@@ -1096,20 +1117,26 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
           `{'loss': 0.2, 'accuracy': 0.7}`.
         """
         del x  # The default implementation does not use `x`.
-        # raise ValueError(f"-----------------------------------debug compute_metrics1")
-        y = [None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+        if not y:
+            y = [None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+        print('----------------------------debug training.py 1121')
+        import inspect
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name
+        caller_module = inspect.getmodule(caller_frame).__name__
+        print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in keras.engine.keras_tensor 238)")
+        print('y_pred: %s' % str(y_pred))
+        print('y: %s' % str(y))
         self.compiled_metrics.update_state(y, y_pred, sample_weight)
-        # raise ValueError(f"-----------------------------------debug compute_metrics1.1")
+        print('----------------------------debug training.py 1123')
         # Collect metrics to return
         return_metrics = {}
         for metric in self.metrics:
-            # raise ValueError(f"-----------------------------------debug compute_metrics1.2")
             result = metric.result()
             if isinstance(result, dict):
                 return_metrics.update(result)
             else:
                 return_metrics[metric.name] = result
-        # raise ValueError(f"-----------------------------------debug compute_metrics2")
         return return_metrics
 
     def make_train_function(self, force=False):
@@ -1144,6 +1171,13 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
             """Runs a single training step."""
 
             def run_step(data):
+                print('----------------------------debug training.py 1167')
+                import inspect
+                caller_frame = inspect.currentframe().f_back
+                caller_name = caller_frame.f_code.co_name
+                caller_module = inspect.getmodule(caller_frame).__name__
+                print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+                print('data: %s' % str(data))
                 outputs = model.train_step(data)
                 # Ensure counter is updated only if `train_step` succeeds.
                 with tf.control_dependencies(_minimum_control_deps(outputs)):
@@ -1155,14 +1189,18 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
                     run_step, jit_compile=True, reduce_retracing=True
                 )
             data = next(iterator)
-            # raise ValueError(f"-------------------------------debug step function1")
+            print('----------------------------debug training.py 1189')
+            import inspect
+            caller_frame = inspect.currentframe().f_back
+            caller_name = caller_frame.f_code.co_name
+            caller_module = inspect.getmodule(caller_frame).__name__
+            print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+            print('data: %s' % str(data))
             outputs = model.distribute_strategy.run(run_step, args=(data,))
-            # outputs = model.train_step(data)
-            # raise ValueError(f"-------------------------------debug step function1.1")
+            outputs = model.train_step(data)
             outputs = reduce_per_replica(
                 outputs, self.distribute_strategy, reduction="first"
             )
-            # raise ValueError(f"-------------------------------debug step function2")
             return outputs
 
         # Special case if steps_per_execution is one.
@@ -1479,9 +1517,13 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
         base_layer.keras_api_gauge.get_cell("fit").set(True)
         # Legacy graph support is contained in `training_v1.Model`.
         version_utils.disallow_legacy_graph("Model", "fit")
-        # print('----------------------------------debug2')
+        print('----------------------------debug training.py 1508')
+        import inspect
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name
+        caller_module = inspect.getmodule(caller_frame).__name__
+        print(f"The caller function is '{caller_name}' in module '{caller_module}'")
         self._assert_compile_was_called()
-        # print('----------------------------------debug3')
         self._check_call_args("fit")
         _disallow_inside_tf_function("fit")
 

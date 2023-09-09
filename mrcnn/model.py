@@ -274,6 +274,14 @@ class ProposalLayer(KL.Layer):
         self.proposal_count = proposal_count
         self.nms_threshold = nms_threshold
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "config": self.config,
+            "proposal_count": self.proposal_count,
+            "nms_threshold": self.nms_threshold
+        })
+        return config
     def call(self, inputs):
         # Box Scores. Use the foreground class confidence. [Batch, num_rois, 1]
         scores = inputs[0][:, :, 1]
@@ -366,6 +374,12 @@ class PyramidROIAlign(KL.Layer):
     def __init__(self, pool_shape, **kwargs):
         super(PyramidROIAlign, self).__init__(**kwargs)
         self.pool_shape = tuple(pool_shape)
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+        "pool_shape": self.pool_shape})
+        return config
 
     def call(self, inputs):
         # Crop boxes [batch, num_boxes, (y1, x1, y2, x2)] in normalized coords
@@ -651,6 +665,13 @@ class DetectionTargetLayer(KL.Layer):
         super(DetectionTargetLayer, self).__init__(**kwargs)
         self.config = config
 
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "config": self.config
+        })
+        return config
+
     def call(self, inputs):
         proposals = inputs[0]
         gt_class_ids = inputs[1]
@@ -702,8 +723,8 @@ def refine_detections_graph(rois, probs, deltas, window, config):
     # Class IDs per ROI
     class_ids = tf.argmax(probs, axis=1, output_type=tf.int32)
     # Class probability of the top class of each ROI
-    # indices = tf.stack([tf.range(probs.shape[0]), class_ids], axis=1)
-    indices = tf.stack([tf.range(tf.shape(probs)[0]), class_ids], axis = 1)
+    indices = tf.stack([tf.range(probs.shape[0]), class_ids], axis=1)
+    # indices = tf.stack([tf.range(tf.shape(probs)[0]), class_ids], axis = 1)
     class_scores = tf.gather_nd(probs, indices)
     # Class-specific bounding box deltas
     deltas_specific = tf.gather_nd(deltas, indices)
@@ -1115,6 +1136,22 @@ def mrcnn_class_loss_graph(target_class_ids, pred_class_logits,
     return loss
 
 
+def mrcnn_class_loss_graph1(target_bbox):
+    """Return the RPN bounding box loss graph.
+
+    config: the model config object.
+    target_bbox: [batch, max positive anchors, (dy, dx, log(dh), log(dw))].
+        Uses 0 padding to fill in unsed bbox deltas.
+    rpn_match: [batch, anchors, 1]. Anchor match type. 1=positive,
+               -1=negative, 0=neutral anchor.
+    rpn_bbox: [batch, anchors, (dy, dx, log(dh), log(dw))]
+    """
+    loss = smooth_l1_loss(target_bbox, target_bbox)
+    
+    loss = K.switch(tf.size(loss) > 0, K.mean(loss), tf.constant(0.0))
+    return loss
+
+
 def mrcnn_bbox_loss_graph(target_bbox, target_class_ids, pred_bbox):
     """Loss for Mask R-CNN bounding box refinement.
 
@@ -1262,7 +1299,7 @@ def load_image_gt(dataset, config, image_id, augment=False, augmentation=None,
         assert image.shape == image_shape, "Augmentation shouldn't change image size"
         assert mask.shape == mask_shape, "Augmentation shouldn't change mask size"
         # Change mask back to bool
-        mask = mask.astype(np.bool)
+        mask = mask.astype(bool)
 
     # Note that some boxes might be all zeros if the corresponding mask got cropped out.
     # and here is to filter them out
@@ -1338,6 +1375,8 @@ def build_detection_targets(rpn_rois, gt_class_ids, gt_boxes, gt_masks, config):
 
     # Compute overlaps [rpn_rois, gt_boxes]
     overlaps = np.zeros((rpn_rois.shape[0], gt_boxes.shape[0]))
+    print('(rpn_rois.shape[0]: %s' % (rpn_rois.shape[0]))
+    print('(gt_boxes.shape[0]: %s' % (gt_boxes.shape[0]))
     for i in range(overlaps.shape[1]):
         gt = gt_boxes[i]
         overlaps[:, i] = utils.compute_iou(
@@ -1842,7 +1881,8 @@ class MaskRCNN():
         self.set_log_dir()
         self.keras_model = self.build(mode=mode, config=config)
         print('---------------------debug model built')
-        self.keras_model.metrics_tensors = []
+        print('KM.Model self.keras_model.losses: %s' % self.keras_model.losses)
+        # self.keras_model.metrics_tensors = []
 
     def build(self, mode, config):
         """Build Mask R-CNN architecture.
@@ -2015,6 +2055,8 @@ class MaskRCNN():
         outputs = [KL.Concatenate(axis=1, name=n)(list(o))
                    for o, n in zip(outputs, output_names)]
 
+        # print('----------------------------debug model.py 2037')
+        # print('outputs: %s' % outputs)
         rpn_class_logits, rpn_class, rpn_bbox = outputs
 
         # Generate proposals
@@ -2071,6 +2113,9 @@ class MaskRCNN():
             output_rois = KL.Lambda(lambda x: x * 1, name="output_rois")(rois)
 
             # Losses
+            # print('----------------------------debug model.py 2096')
+            # print('rpn_class_logits: %s' % rpn_class_logits)
+            # print('mrcnn_class_logits: %s' % mrcnn_class_logits)
             rpn_class_loss = KL.Lambda(lambda x: rpn_class_loss_graph(*x), name="rpn_class_loss")(
                 [input_rpn_match, rpn_class_logits])
             rpn_bbox_loss = KL.Lambda(lambda x: rpn_bbox_loss_graph(config, *x), name="rpn_bbox_loss")(
@@ -2091,6 +2136,10 @@ class MaskRCNN():
                        mrcnn_class_logits, mrcnn_class, mrcnn_bbox, mrcnn_mask,
                        rpn_rois, output_rois,
                        rpn_class_loss, rpn_bbox_loss, class_loss, bbox_loss, mask_loss]
+            for input in inputs:
+                print('input layer: %s' % input)
+            for output in outputs:
+                print('output layer: %s' % output)
             model = KM.Model(inputs, outputs, name='mask_rcnn')
         else:
             # Network Heads
@@ -2104,6 +2153,11 @@ class MaskRCNN():
             # Detections
             # output is [batch, num_detections, (y1, x1, y2, x2, class_id, score)] in
             # normalized coordinates
+
+            print('rpn_rois: %s' % rpn_rois)
+            print('mrcnn_class: %s' % mrcnn_class)
+            print('mrcnn_bbox: %s' % mrcnn_bbox)
+            print('input_image_meta: %s' % input_image_meta)
 
             detections = DetectionLayer(config, name="mrcnn_detection")(
                 [rpn_rois, mrcnn_class, mrcnn_bbox, input_image_meta])
@@ -2228,29 +2282,47 @@ class MaskRCNN():
             clipnorm=self.config.GRADIENT_CLIP_NORM)
         # Add Losses
         # First, clear previously set losses to avoid duplication
-        self.keras_model._losses = []
-        self.keras_model._per_input_losses = {}
-        # loss_names = [
-        #     "rpn_class_loss",  "rpn_bbox_loss",
-        #     "mrcnn_class_loss", "mrcnn_bbox_loss", "mrcnn_mask_loss"]
-        loss_names = ["rpn_class_loss",  "rpn_bbox_loss"]
+        # self.keras_model._losses = []
+        # self.keras_model._per_input_losses = {}
+        loss_names = [
+            "rpn_class_loss",  "rpn_bbox_loss",
+            "mrcnn_class_loss", "mrcnn_bbox_loss", "mrcnn_mask_loss"]
+        # loss_names = ["rpn_class_loss",  "rpn_bbox_loss"]
+        # loss_names = ["mrcnn_bbox_loss"]
+        # loss_names = ["mrcnn_class_loss", "mrcnn_bbox_loss", "mrcnn_mask_loss"]
         for name in loss_names:
             layer = self.keras_model.get_layer(name)
             # print('self.keras_model: %s' % self.keras_model)
             # print('self.keras_model.losses: %s' % self.keras_model.losses)
             # self.keras_model.losses = K.identity(self.keras_model.losses)
-            # print('self.keras_model.losses: %s' % self.keras_model.losses)
+            config = self.keras_model.get_config
+            print('self.keras_model.get_config: %s' % config)
+            print('self.keras_model.losses: %s' % self.keras_model.losses)
             keras_model_losses_str = [str(keras_model_loss) for keras_model_loss in self.keras_model.losses]
+            layer_str = str(layer)
+            print('layer_str: %s' % layer_str)
+            # print('layer dir(): %s' % dir(layer))
             layer_output_str = str(layer.output)
+            print('layer_output_str: %s' % layer_output_str)
+            layer_output_name_str = str(layer.output.name)
+            print('layer_output_name_str: %s' % layer_output_name_str)
+            for keras_model_loss in self.keras_model.losses:
+                print('keras_model_loss: %s' % keras_model_loss)
+                # print('K.identity(keras_model_loss): %s' % K.identity(keras_model_loss))
             # print('self.keras_model.losses[0]: %s' % self.keras_model.losses[0])
             if layer_output_str in keras_model_losses_str:
                 continue
             loss = (
-                tf.reduce_mean(layer.output, keepdims=True)
+                tf.reduce_mean(layer.output, keepdims=True, name='Test1')
                 * self.config.LOSS_WEIGHTS.get(name, 1.))
-            print('loss: %s' % loss)
-            # print('self.keras_model: %s' % self.keras_model)
+            print('MRCNN complie add loss: %s' % loss)
+            print('layer.output: %s' % layer.output)
+            print('self.config.LOSS_WEIGHTS.get(name, 1.): %s' % self.config.LOSS_WEIGHTS.get(name, 1.))
+            # print('tf.reduce_mean(layer.output, keepdims=True): %s' % tf.reduce_mean(layer.output, keepdims=True))
+            # print('tf.reduce_mean(layer.output, keepdims=True, name=Test1): %s' % tf.reduce_mean(layer.output, keepdims=True, name='Test1'))
             self.keras_model.add_loss(loss)
+            # print('----------------------------debug model.py 2274')
+            # print('graph name: %s' % [n.name for n in tf.compat.v1.get_default_graph().as_graph_def().node])
 
         # Add L2 Regularization
         # Skip gamma and beta weights of batch normalization layers.
@@ -2263,27 +2335,36 @@ class MaskRCNN():
             # print('loss: %s' % loss)
             return loss
 
-        # Wrap the loss computation in a lambda function
+        # # Wrap the loss computation in a lambda function
         loss_fn = lambda y_true, y_pred: compute_loss(y_true, y_pred)
+        # print('loss_fn: %s' % loss_fn)
 
+
+        # for w in self.keras_model.trainable_weights:
+        #     if 'gamma' not in w.name and 'beta' not in w.name:
+        #         print('self.config.WEIGHT_DECAY: %s' % self.config.WEIGHT_DECAY)
+        #         print('w: %s' % w)
+        #         print('K.variable(w): %s' % K.variable(w))
+        #         print('keras.regularizers.l2(self.config.WEIGHT_DECAY)(w): %s' % keras.regularizers.l2(self.config.WEIGHT_DECAY)(w))
+        #         print('tf.cast(tf.size(w), tf.float32): %s' % tf.cast(tf.size(w), tf.float32))
 
         reg_losses = [
             keras.regularizers.l2(self.config.WEIGHT_DECAY)(w) / tf.cast(tf.size(w), tf.float32)
             for w in self.keras_model.trainable_weights
             if 'gamma' not in w.name and 'beta' not in w.name]
+        
         # print('reg_losses: %s' % reg_losses)
-        # print('tf.add_n(reg_losses): %s' % tf.add_n(reg_losses))
+        # self.keras_model.add_loss(tf.add_n(reg_losses))
 
         # for reg_loss in reg_losses:
         #     print('-----------------------debug reg_loss: %s' % reg_loss)
-            # self.keras_model.add_loss(lambda reg_loss: reg_loss)
+
         # tf.compat.v1.enable_eager_execution()
         # self.keras_model.add_loss(KL.Input(tensor=tf.add_n(reg_losses).numpy()))
         # self.keras_model.add_loss(KL.Lambda(tensor=tf.add_n(reg_losses)))
         print('self.keras_model.inputs: %s' % self.keras_model.inputs)
         print('self.keras_model.outputs: %s' % self.keras_model.outputs)
         # self.keras_model.add_loss(compute_loss(self.keras_model.inputs, self.keras_model.outputs))
-        # print('-----------------------debug reg_losses added')
 
         # Compile
         self.keras_model.compile(
@@ -2295,11 +2376,18 @@ class MaskRCNN():
             if name in self.keras_model.metrics_names:
                 continue
             layer = self.keras_model.get_layer(name)
+            # print('----------------------------debug model.py 2366')
+            # print('name: %s' % name)
+            # print('self.keras_model metrics_names type: %s' % type(self.keras_model.metrics_names))
+            # print('before self.keras_model.metrics_names: %s' % self.keras_model.metrics_names)
             self.keras_model.metrics_names.append(name)
+            # print('after self.keras_model.metrics_names: %s' % self.keras_model.metrics_names)
             loss = (
                 tf.reduce_mean(layer.output, keepdims=True)
                 * self.config.LOSS_WEIGHTS.get(name, 1.))
-            self.keras_model.metrics_tensors.append(loss)
+            # print('before self.keras_model.metrics_tensors: %s' % self.keras_model.metrics_tensors)
+            # self.keras_model.metrics_tensors.append(loss)
+            # print('after self.keras_model.metrics_tensors: %s' % self.keras_model.metrics_tensors)
 
     def set_trainable(self, layer_regex, keras_model=None, indent=0, verbose=1):
         """Sets model layers as trainable if their names match
@@ -2410,6 +2498,7 @@ class MaskRCNN():
             augmentation. A source is string that identifies a dataset and is
             defined in the Dataset class.
         """
+        # print('----------------------------debug model.py 2441')
         assert self.mode == "training", "Create model in training mode."
 
         # Pre-defined layer regular expressions
@@ -2431,6 +2520,7 @@ class MaskRCNN():
                                          augmentation=augmentation,
                                          batch_size=self.config.BATCH_SIZE,
                                          no_augmentation_sources=no_augmentation_sources)
+
         val_generator = data_generator(val_dataset, self.config, shuffle=True,
                                        batch_size=self.config.BATCH_SIZE)
 
@@ -2438,6 +2528,7 @@ class MaskRCNN():
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
 
+        # print('----------------------------debug model.py 2470')
         # Callbacks
         callbacks = [
             keras.callbacks.TensorBoard(log_dir=self.log_dir,
@@ -2456,6 +2547,7 @@ class MaskRCNN():
         self.set_trainable(layers)
         self.compile(learning_rate, self.config.LEARNING_MOMENTUM)
 
+        # print('----------------------------debug model.py 2489')
         # Work-around for Windows: Keras fails on Windows when using
         # multiprocessing workers. See discussion here:
         # https://github.com/matterport/Mask_RCNN/issues/13#issuecomment-353124009
@@ -2464,7 +2556,18 @@ class MaskRCNN():
         else:
             workers = multiprocessing.cpu_count()
 
-        self.keras_model.fit(
+        # print('----------------------------debug model.py 2498')
+        # for train_generator_i in train_generator:
+        #     for train_generator_i_j in train_generator_i:
+        #         print('train_generator_i_j: %s' % str(train_generator_i_j))
+        #     break
+        # for val_generator_i in val_generator:            
+        #     for val_generator_i_j in val_generator_i:
+        #         print('val_generator_i_j: %s' % str(val_generator_i_j))
+        #     break
+
+        print('self.config.VALIDATION_STEPS: %s' % self.config.VALIDATION_STEPS)
+        self.keras_model.fit_generator(
             train_generator,
             initial_epoch=self.epoch,
             epochs=epochs,
@@ -2476,6 +2579,7 @@ class MaskRCNN():
             workers=workers,
             use_multiprocessing=True,
         )
+        # print('----------------------------debug model.py 2511')
         self.epoch = max(self.epoch, epochs)
 
     def mold_inputs(self, images):

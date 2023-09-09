@@ -129,6 +129,7 @@ if __name__ == "__main__":
         # Reset default graph. Keras leaves old ops in the graph,
         # which are ignored for execution but clutter graph
         # visualization in TensorBoard.
+        print('----------------------------debug parallel.py 132')
         tf.reset_default_graph()
 
         inputs = KL.Input(shape=x_train.shape[1:], name="input_image")

@@ -231,14 +231,22 @@ class KerasTensor:
 
         # Use the generic conversion from typespec to a placeholder.
         def component_to_placeholder(component):
-            import inspect
-            caller_frame = inspect.currentframe().f_back
-            caller_name = caller_frame.f_code.co_name
-            caller_module = inspect.getmodule(caller_frame).__name__
-            # print(f"The caller function is '{caller_name}' in module '{caller_module}'")
-            # print('component: %s' % component)
+            # import inspect
+            # caller_frame = inspect.currentframe().f_back
+            # caller_name = caller_frame.f_code.co_name
+            # caller_module = inspect.getmodule(caller_frame).__name__
+            # print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in keras.engine.keras_tensor 238)")
             return tf.compat.v1.placeholder(component.dtype, component.shape)
 
+        # print('----------------------------debug keras_tensor.py 243')
+        # import inspect
+        # caller_frame = inspect.currentframe().f_back
+        # caller_name = caller_frame.f_code.co_name
+        # caller_module = inspect.getmodule(caller_frame).__name__
+        # print(f"The caller function is '{caller_name}' in module '{caller_module}' (currently in keras_tensor.py 248)")
+        # print('keras_tensor.py self: %s' % self)
+        # print('component_to_placeholder: %s' % component_to_placeholder)
+        # print('self.type_spec: %s' % self.type_spec)
         return tf.nest.map_structure(
             component_to_placeholder, self.type_spec, expand_composites=True
         )
@@ -653,6 +661,11 @@ def register_keras_tensor_specialization(cls, keras_tensor_subclass):
 
 def keras_tensor_to_placeholder(x):
     """Construct a graph placeholder to represent a KerasTensor when tracing."""
+    # import inspect
+    # caller_frame = inspect.currentframe().f_back
+    # caller_name = caller_frame.f_code.co_name
+    # caller_module = inspect.getmodule(caller_frame).__name__
+    # print(f"The caller function is '{caller_name}' in module '{caller_module}' (currently in keras_tensor.py 668)")
     if isinstance(x, KerasTensor):
         return x._to_placeholder()
     else:

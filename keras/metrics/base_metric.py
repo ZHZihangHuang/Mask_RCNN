@@ -500,6 +500,13 @@ class Reduce(Metric):
                     )
             values = tf.multiply(values, sample_weight)
 
+        print('----------------------------debug base_metric.py 503')
+        import inspect
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name
+        caller_module = inspect.getmodule(caller_frame).__name__
+        print(f"The caller function is '{caller_name}' in module '{caller_module}'")
+        print('values: %s' % values)
         value_sum = tf.reduce_sum(values)
         with tf.control_dependencies([value_sum]):
             update_total_op = self.total.assign_add(value_sum)

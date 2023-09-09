@@ -1006,6 +1006,13 @@ class Functional(training_lib.Model):
         return
 
     def _graph_network_add_loss(self, symbolic_loss):
+        import inspect
+        caller_frame = inspect.currentframe().f_back
+        caller_name = caller_frame.f_code.co_name
+        caller_module = inspect.getmodule(caller_frame).__name__
+        print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in functional.py 1013)")
+        print('self.inputs: %s' % self.inputs)
+        print('symbolic_loss: %s' % symbolic_loss)
         new_nodes, new_layers = _map_subgraph_network(
             self.inputs, [symbolic_loss]
         )
@@ -1099,6 +1106,13 @@ def _map_graph_network(inputs, outputs):
     # Handle inputs that are not connected to outputs.
     # We do not error out here because the inputs may be used to compute losses
     # and metrics.
+    print('----------------------------debug functional.py 1102')
+    print('inputs: %s' % inputs)
+    import inspect
+    caller_frame = inspect.currentframe().f_back
+    caller_name = caller_frame.f_code.co_name
+    caller_module = inspect.getmodule(caller_frame).__name__
+    print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in functional.py 1108)")
     for input_t in inputs:
         input_layer = input_t._keras_history[0]
         if input_layer not in layers_depths:
@@ -1142,6 +1156,8 @@ def _map_graph_network(inputs, outputs):
         computable_tensors.add(id(x))
 
     layers_with_complete_input = []  # To provide a better error msg.
+    print('----------------------------debug functional.py 1159')
+    print('len nodes_by_depth: %s' % len(nodes_by_depth))
     for depth in depth_keys:
         for node in nodes_by_depth[depth]:
             layer = node.layer
@@ -1158,6 +1174,7 @@ def _map_graph_network(inputs, outputs):
                     computable_tensors.add(id(x))
                 layers_with_complete_input.append(layer.name)
 
+    print('layers_with_complete_input: %s' % layers_with_complete_input)
     # Ensure name unicity, which will be crucial for serialization
     # (since serialized nodes refer to layers by their name).
     all_names = [layer.name for layer in layers]
@@ -1265,6 +1282,11 @@ def _map_subgraph_network(inputs, outputs):
     if not tf.compat.v1.executing_eagerly_outside_functions():
         base_layer_utils.create_keras_history(outputs)
     # Keep only nodes and layers in the topology between inputs and outputs.
+    import inspect
+    caller_frame = inspect.currentframe().f_back
+    caller_name = caller_frame.f_code.co_name
+    caller_module = inspect.getmodule(caller_frame).__name__
+    print(f"The caller function is '{caller_name}' in module '{caller_module}' (current in functional.py 1280)")
     _, nodes_by_depth, layers, _ = _map_graph_network(inputs, outputs)
     return tf.nest.flatten([nodes for nodes in nodes_by_depth.values()]), layers
 
